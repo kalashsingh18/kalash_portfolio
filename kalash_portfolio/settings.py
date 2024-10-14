@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-z!jlzy#a!aj8id1=o7fwul)zd(zw1t+ct=r@2--w-73n-8y@+!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -161,3 +161,14 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
+# settings.py
+
+STATIC_URL = '/static/'  # URL prefix for static files
+
+# Directory where static files are collected
+STATICFILES_DIRS = [
+    BASE_DIR / "static",  # or os.path.join(BASE_DIR, "static")
+]
+
+# The directory where collectstatic will collect static files for production
+STATIC_ROOT = BASE_DIR / "staticfiles"  # This is usually used in production
