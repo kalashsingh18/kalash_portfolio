@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Video Stream</title>
+</head>
+<body>
+    <h1>Live Video Stream</h1>
+    <video id="video" autoplay playsinline width="640" height="480" controls></video>
+    <br>
+    <button id="start">Start Recording</button>
+    <button id="stop" disabled>Stop Recording</button>
+    <p id="status"></p>
+
+    <script>
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
+        const status = document.getElementById('status');
+
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // Access the user's webcam
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                video.srcObject = stream;
+
+                // Initialize MediaRecorder
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    recordedChunks = [];
+
+                    // Prepare form data
+                    const formData = new FormData();
+                    formData.append('title', 'Recorded Video');
+                    formData.append('video_file', blob, 'recorded_video.webm');
+
+                    // Send video to backend
+                    fetch('u', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status !== undefined && !data.status) {
+                            status.textContent = `Error: ${data.message}`;
+                        } else {
+                            status.textContent = 'Video uploaded successfully!';
+                            console.log('Success:', data);
+                        }
+                    })
+                    .catch(error => {
+                        status.textContent = 'Error uploading video.';
+                        console.error('Upload Error:', error);
+                    });
+                };
+            })
+            .catch(err => {
+                console.error('Error accessing webcam:', err);
+                status.textContent = 'Error accessing webcam. Please check permissions.';
+            });
+
+        // Start recording
+        startButton.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'inactive') {
+                mediaRecorder.start();
+                status.textContent = 'Recording...';
+                startButton.disabled = true;
+                stopButton.disabled = false;
+            }
+        });
+
+        // Stop recording
+        stopButton.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                status.textContent = 'Processing video...';
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
